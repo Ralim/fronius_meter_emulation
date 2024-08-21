@@ -1,0 +1,13 @@
+services:
+  fronius-meter-emulation:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+      - "5502:5502"
+    healthcheck:
+      test: curl --fail http://localhost:8000/ || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

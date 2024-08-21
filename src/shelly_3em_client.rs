@@ -127,10 +127,10 @@ async fn read_shelly_phase_readings(
         let active_power = merge_u16_f32(resp[4], resp[5]);
         let apparent_power = merge_u16_f32(resp[6], resp[7]);
         let power_factor = merge_u16_f32(resp[8], resp[9]);
-        println!(
-            "Shelly Readings for phase {base_addr} -> {voltage}V {current}A {active_power}VA {apparent_power}VAR {power_factor}pf"
-        );
-        return (voltage, current, active_power, apparent_power, power_factor);
+        // println!(
+        //     "Shelly Readings for phase {base_addr} -> {voltage}V {current}A {active_power}VA {apparent_power}VAR {power_factor}pf"
+        // );
+        (voltage, current, active_power, apparent_power, power_factor)
     } else {
         panic!("Cant Read Shelly input regs for phase {base_addr}")
     }
