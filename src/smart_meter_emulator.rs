@@ -149,7 +149,7 @@ impl SmartMeterEmulator {
     ) {
         println!("Starting readinger updates handler task");
         while let Some(reading) = events.recv().await {
-            println!("New Reading of {reading:?}");
+            // println!("New Reading of {reading:?}");
             match reading {
                 Readings::NetACCurrent(reading) => {
                     Self::set_holding_reg_f32(&holding_registers, 40071, reading)
