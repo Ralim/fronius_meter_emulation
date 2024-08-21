@@ -1,12 +1,10 @@
 use std::{
     collections::HashMap,
     future,
-    net::SocketAddr,
     sync::{Arc, Mutex},
-    time::Duration,
 };
 use tokio::sync::mpsc::{self, Receiver, Sender};
-use tokio_modbus::{prelude::*, server::tcp::Server};
+use tokio_modbus::prelude::*;
 
 #[derive(Clone)]
 pub struct SmartMeterEmulator {
@@ -95,13 +93,13 @@ impl SmartMeterEmulator {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0,
         ];
-        for index in 0..sun_spec_values.len() {
-            holding_registers.insert(40000 + index as u16, sun_spec_values[index]);
+        for (index, item) in sun_spec_values.iter().enumerate() {
+            holding_registers.insert(40000 + index as u16, *item);
         }
         // Second set of filler readings
         let sun_spec_values_2: [u16; 16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        for index in 0..sun_spec_values_2.len() {
-            holding_registers.insert(40129 + index as u16, sun_spec_values_2[index]);
+        for (index, item) in sun_spec_values_2.iter().enumerate() {
+            holding_registers.insert(40129 + index as u16, *item);
         }
         // 0 fill the "readings" address sapce
         for index in 40071..40161 {

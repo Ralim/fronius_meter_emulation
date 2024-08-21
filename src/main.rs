@@ -1,22 +1,45 @@
 use shelly_3em_client::Shelly3EMClient;
-use smart_meter_emulator::{Readings, SmartMeterEmulator};
+use smart_meter_emulator::SmartMeterEmulator;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio_modbus::server::tcp::{accept_tcp_connection, Server};
 mod shelly_3em_client;
 mod smart_meter_emulator;
+use axum::{routing::get, Router};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
-    log::info!("Starting Fronius modbus bridge");
+    tracing_subscriber::fmt::init();
+
+    println!("Starting Fronius modbus bridge");
     let socket_addr = "0.0.0.0:5502".parse().unwrap();
 
     let (emulated_meter, meter_update_handle) = SmartMeterEmulator::new();
     let _shelly = Shelly3EMClient::new("192.168.0.223:502".parse().unwrap(), meter_update_handle);
-    server_context(socket_addr, emulated_meter).await;
+
+    // Spawn healthcheck server
+    tokio::spawn(async move {
+        healthcheck_server().await;
+    });
+    //Start fake meter
+    server_context(socket_addr, emulated_meter)
+        .await
+        .expect("Should never exit fake meter");
 
     Ok(())
+}
+
+async fn healthcheck_server() {
+    let app = Router::new()
+        // `GET /` goes to `root`
+        .route("/", get(healthcheck));
+
+    // run our app with hyper, listening globally on port 3000
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+async fn healthcheck() -> &'static str {
+    "OK"
 }
 
 async fn server_context(
