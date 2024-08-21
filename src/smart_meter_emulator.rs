@@ -84,7 +84,7 @@ impl SmartMeterEmulator {
         // Seed in all the constant values that are used for the device
         // Well-known value. Uniquely identifies this as a SunSpec Modbus Map
         let sun_spec_values: [u16; 101] = [
-            21365, 28243, // Sun Spec marker
+            0x5375, 0x6e53, // Sun Spec marker
             1, 65, // Num registers
             70, 114, 111, 110, 105, 117, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 83, 109, 97, 114, 116, 32,
             77, 101, 116, 101, 114, 32, 54, 51, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -105,18 +105,21 @@ impl SmartMeterEmulator {
         }
 
         //Misc filler
-        holding_registers.insert(768, 0);
-        holding_registers.insert(1706, 0);
+
         holding_registers.insert(40193, 0);
         holding_registers.insert(40194, 0);
         holding_registers.insert(40195, 0xFFFF); // Terminates the readings blocks
         holding_registers.insert(40196, 0);
-        holding_registers.insert(50000, 0);
-        holding_registers.insert(50001, 0);
 
         holding_registers.insert(0, 1); // Sunspec model common
         holding_registers.insert(1, 0); // Length of registers
         holding_registers.insert(11, 0);
+        holding_registers.insert(12, 0);
+        // Not SunSpec, so return 0 to mark us as SunSpec
+        holding_registers.insert(768, 0);
+        holding_registers.insert(1706, 0);
+        holding_registers.insert(50000, 0);
+        holding_registers.insert(50001, 0);
 
         // To handle incoming data updates, we use an MPSC channel for comms
         let (tx, rx) = mpsc::channel(128);
@@ -278,6 +281,6 @@ fn register_read(
             return Err(Exception::IllegalDataAddress);
         }
     }
-
+    println!("Register read for addr:{addr} count:{cnt} returns {response_values:?}");
     Ok(response_values)
 }
