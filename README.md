@@ -13,3 +13,8 @@ All this code does is transfer the power readings over.
 ### Emulated meter
 
 The emulated meter does not implement writing.
+
+
+## Kudos
+
+https://www.photovoltaikforum.com/thread/224214-gen24-smart-meter-modbus-tcp-emulation-mit-esp32/

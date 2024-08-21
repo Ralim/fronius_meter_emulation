@@ -98,10 +98,14 @@ impl SmartMeterEmulator {
         for index in 0..sun_spec_values.len() {
             holding_registers.insert(40000 + index as u16, sun_spec_values[index]);
         }
-        // Second set of readings
+        // Second set of filler readings
         let sun_spec_values_2: [u16; 16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for index in 0..sun_spec_values_2.len() {
             holding_registers.insert(40129 + index as u16, sun_spec_values_2[index]);
+        }
+        // 0 fill the "readings" address sapce
+        for index in 40071..40161 {
+            holding_registers.insert(index as u16, 0);
         }
 
         //Misc filler
@@ -128,6 +132,7 @@ impl SmartMeterEmulator {
         tokio::spawn(async move {
             Self::handle_incoming_register_events(rx, handler_holding_registers).await;
         });
+
         //Return server & channel for readings
         (
             Self {
@@ -137,6 +142,7 @@ impl SmartMeterEmulator {
             tx,
         )
     }
+
     async fn handle_incoming_register_events(
         mut events: Receiver<Readings>,
         holding_registers: Arc<Mutex<HashMap<u16, u16>>>,
@@ -281,6 +287,6 @@ fn register_read(
             return Err(Exception::IllegalDataAddress);
         }
     }
-    println!("Register read for addr:{addr} count:{cnt} returns {response_values:?}");
+    // println!("Register read for addr:{addr} count:{cnt} returns {response_values:?}");
     Ok(response_values)
 }
