@@ -59,14 +59,6 @@ impl Shelly3EMClient {
                 .expect("Cant send readings to fake meter");
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
-
-        // let bytes: Vec<u8> = data.iter().fold(vec![], |mut x, elem| {
-        //     x.push((elem & 0xff) as u8);
-        //     x.push((elem >> 8) as u8);
-        //     x
-        // });
-        // let id = String::from_utf8(bytes).unwrap();
-        // println!("The coupler ID is '{id}'");
     }
 }
 fn merge_u16_f32(a: u16, b: u16) -> f32 {
