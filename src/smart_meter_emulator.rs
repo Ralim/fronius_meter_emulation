@@ -1,14 +1,16 @@
 use std::{
     collections::HashMap,
-    future,
+    future, process,
     sync::{Arc, Mutex},
 };
-use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::{
+    sync::mpsc::{self, Receiver, Sender},
+    time::timeout,
+};
 use tokio_modbus::prelude::*;
 
 #[derive(Clone)]
 pub struct SmartMeterEmulator {
-    input_registers: Arc<Mutex<HashMap<u16, u16>>>,
     holding_registers: Arc<Mutex<HashMap<u16, u16>>>,
 }
 #[derive(Debug)]
@@ -54,7 +56,7 @@ impl tokio_modbus::server::Service for SmartMeterEmulator {
         let res = match req {
             Request::ReadInputRegisters(addr, cnt) => {
                 println!("Register Read for {addr}/{cnt}");
-                register_read(&self.input_registers.lock().unwrap(), addr, cnt)
+                register_read(&self.holding_registers.lock().unwrap(), addr, cnt)
                     .map(Response::ReadInputRegisters)
             }
             Request::ReadHoldingRegisters(addr, cnt) => {
@@ -132,13 +134,7 @@ impl SmartMeterEmulator {
         });
 
         //Return server & channel for readings
-        (
-            Self {
-                input_registers: Arc::new(Mutex::new(input_registers)),
-                holding_registers,
-            },
-            tx,
-        )
+        (Self { holding_registers }, tx)
     }
 
     async fn handle_incoming_register_events(
@@ -146,7 +142,9 @@ impl SmartMeterEmulator {
         holding_registers: Arc<Mutex<HashMap<u16, u16>>>,
     ) {
         println!("Starting readinger updates handler task");
-        while let Some(reading) = events.recv().await {
+
+        let data_update_timeout = tokio::time::Duration::from_secs(30);
+        while let Ok(Some(reading)) = timeout(data_update_timeout, events.recv()).await {
             // println!("New Reading of {reading:?}");
             match reading {
                 Readings::NetACCurrent(reading) => {
@@ -238,7 +236,8 @@ impl SmartMeterEmulator {
                 }
             }
         }
-        unreachable!();
+        println!("No Raw reading updates in 30s, exiting");
+        process::exit(1);
     }
     fn set_holding_reg(
         holding_registers: &Arc<Mutex<HashMap<u16, u16>>>,
