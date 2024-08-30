@@ -13,6 +13,8 @@ use tokio_modbus::prelude::*;
 pub struct SmartMeterEmulator {
     holding_registers: Arc<Mutex<HashMap<u16, u16>>>,
 }
+// Turns out you only need to implement total power here, but they are all supported for future hacks
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Readings {
     NetACCurrent(f32),

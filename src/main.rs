@@ -1,8 +1,10 @@
-use shelly_3em_client::Shelly3EMClient;
+use data_fetcher::DataFetcher;
 use smart_meter_emulator::SmartMeterEmulator;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio_modbus::server::tcp::{accept_tcp_connection, Server};
+mod data_fetcher;
+mod home_assistant;
 mod shelly_3em_client;
 mod smart_meter_emulator;
 use axum::{routing::get, Router};
@@ -15,9 +17,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let socket_addr = "0.0.0.0:5502".parse().unwrap();
 
     let (emulated_meter, meter_update_handle) = SmartMeterEmulator::new();
-    let _shelly = Shelly3EMClient::new("192.168.0.223:502".parse().unwrap(), meter_update_handle);
-
-    // Spawn healthcheck server
+    let _data_fetcher = DataFetcher::new(meter_update_handle);
+    // Spawn health-check server
     tokio::spawn(async move {
         healthcheck_server().await;
     });
@@ -30,9 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn healthcheck_server() {
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(healthcheck));
+    let app = Router::new().route("/", get(healthcheck));
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
