@@ -1,9 +1,9 @@
 # Build Stage
-FROM rust:1 AS builder
+FROM rust:1-alpine AS builder
 WORKDIR /usr/src/
 RUN rustup update
 RUN rustup target add x86_64-unknown-linux-musl
-
+RUN apk add --no-cache musl-dev
 RUN USER=root cargo new fronius_meter_emulation
 WORKDIR /usr/src/fronius_meter_emulation
 COPY Cargo.toml Cargo.lock ./

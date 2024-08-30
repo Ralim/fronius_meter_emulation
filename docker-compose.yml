@@ -1,5 +1,6 @@
 services:
   fronius-meter-emulation:
+    restart: always
     build:
       context: .
     ports:
