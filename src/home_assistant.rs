@@ -10,8 +10,8 @@ pub struct HomeAssistantAPI {
 impl HomeAssistantAPI {
     pub fn new() -> Self {
         Self {
-            endpoint_url: env::var("HA_URL").expect("Should provide HA url"),
-            auth_token: env::var("HA_TOKEN").expect("Should provide HA token"),
+            endpoint_url: env::var("HA_URL").unwrap_or_default(),
+            auth_token: env::var("HA_TOKEN").unwrap_or_default(),
             client: reqwest::Client::new(),
         }
     }
@@ -20,6 +20,9 @@ impl HomeAssistantAPI {
         &mut self,
         sensor_path: &str,
     ) -> Result<HASensor, anyhow::Error> {
+        if self.endpoint_url.is_empty() {
+            anyhow::bail!("No HA connection");
+        }
         let result = self
             .client
             .get(format!("{}/api/states/{}", self.endpoint_url, sensor_path))
