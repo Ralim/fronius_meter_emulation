@@ -51,7 +51,7 @@ pub enum Readings {
 impl tokio_modbus::server::Service for SmartMeterEmulator {
     type Request = Request<'static>;
     type Response = Response;
-    type Exception = Exception;
+    type Exception = tokio_modbus::ExceptionCode;
     type Future = future::Ready<Result<Self::Response, Self::Exception>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
@@ -69,7 +69,7 @@ impl tokio_modbus::server::Service for SmartMeterEmulator {
 
             _ => {
                 println!("SERVER: Exception::IllegalFunction - Unimplemented function code in request: {req:?}");
-                Err(Exception::IllegalFunction)
+                Err(tokio_modbus::ExceptionCode::IllegalFunction)
             }
         };
         future::ready(res)
@@ -273,7 +273,7 @@ fn register_read(
     registers: &HashMap<u16, u16>,
     addr: u16,
     cnt: u16,
-) -> Result<Vec<u16>, Exception> {
+) -> Result<Vec<u16>, tokio_modbus::ExceptionCode> {
     let mut response_values = vec![0; cnt.into()];
     for i in 0..cnt {
         let reg_addr = addr + i;
@@ -283,7 +283,7 @@ fn register_read(
             println!(
                 "SERVER: Exception::IllegalDataAddress, can't handle read of register {reg_addr}/0x{reg_addr:X}"
             );
-            return Err(Exception::IllegalDataAddress);
+            return Err(tokio_modbus::ExceptionCode::IllegalDataAddress);
         }
     }
     // println!("Register read for addr:{addr} count:{cnt} returns {response_values:?}");
