@@ -17,5 +17,5 @@ FROM curlimages/curl
 COPY --from=builder /usr/local/cargo/bin/fronius_meter_emulation .
 USER 1000
 EXPOSE 5502
-EXPOSE 8000
 CMD ["./fronius_meter_emulation"]
+HEALTHCHECK CMD netstat -an | grep 5502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;

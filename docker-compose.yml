@@ -4,10 +4,9 @@ services:
     build:
       context: .
     ports:
-      - "8000:8000"
       - "5502:5502"
     healthcheck:
-      test: curl --fail http://localhost:8000/ || exit 1
+      test: netstat -an | grep 5502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
       interval: 10s
       timeout: 10s
       retries: 3
