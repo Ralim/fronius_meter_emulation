@@ -3,12 +3,12 @@
 TL;DR I'm not installing multiple vendors smart meters because of vendor locking.
 
 This software is setup to read from a Shelly 3EM over TCP Modbus, and then provide those readings to a Fronius solar inverter.
-This setup will **NEVER** be perfect. You will not be able to ever use this for 0 export control.
+This setup will **NEVER** be perfect. You will **not** be able to ever use this for 0 export control.
 This is used as "near enough" control for situations where you _can_ export to the grid, but pricing may be non optimal.
 Such as in Australia when on wholesale pricing and during the middle of the day when export prices go negative.
-All this code does is transfer the power readings over.
+All this code does is transfer the power readings over between the Shelly Modbus and the Fronius Modbus TCP interface.
 
-To enhance this slightly further, biasing values can be read from home assistant.
+To enhance this slightly further, biasing values can be read from home assistant (or another http server).
 These will be merged in with the "real" readings, to allow software to drive the inverter to regulate around a different setpoint.
 This is useful as normally you would set the inverter to some limit X of the maximum grid export amount, and it will internally use a control loop
 to try and regulate its output to keep at that setpoint of export.
