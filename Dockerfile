@@ -6,11 +6,10 @@ RUN apk add --no-cache musl-dev
 RUN USER=root cargo new fronius_meter_emulation
 WORKDIR /usr/src/fronius_meter_emulation
 COPY Cargo.toml Cargo.lock ./
-# Seed the cache from dependencies from the Cargo.* files
-RUN cargo build --release
+# Todo; seed deps when https://github.com/rust-lang/cargo/issues/2644 is fixed
 # Now load in the source code (Layer that changes more frequently)
 COPY src ./src
-RUN cargo install --path .
+RUN cargo install --locked --path .
 
 # Bundle Stage
 FROM alpine:latest
