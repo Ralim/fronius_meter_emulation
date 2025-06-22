@@ -5,9 +5,16 @@ services:
       context: .
     ports:
       - "5502:5502"
+    environment:
+      - HA_URL=http://192.168.0.2:8123
+      - HA_TOKEN=your_long_lived_access_token
+      - SHELLY_MODBUS=192.168.0.3:502
+      - HA_EXTRA_IMPORT=sensor.fronius_solar_extra_import
+      - HA_EXTRA_EXPORT=sensor.fronius_solar_extra_export
+
     healthcheck:
       test: netstat -an | grep 5502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
       interval: 10s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
