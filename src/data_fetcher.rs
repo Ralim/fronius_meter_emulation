@@ -1,8 +1,8 @@
 use std::{env, time::Duration};
 
 use crate::{
-    home_assistant::HomeAssistantAPI, shelly_3em_client::Shelly3EMClient,
-    smart_meter_emulator::Readings,
+    home_assistant::HomeAssistantAPI, rolling_average::RollingAverage,
+    shelly_3em_client::Shelly3EMClient, smart_meter_emulator::Readings,
 };
 use tokio::{sync::mpsc::Sender, time};
 
@@ -25,10 +25,14 @@ impl DataFetcher {
         let home_assistant_extra_export_sensor = env::var("HA_EXTRA_EXPORT").unwrap_or_default();
         let shelly_modbus =
             env::var("SHELLY_MODBUS").expect("Required to add Shelly modbus connection info");
+
         println!("Connecting to shelly `{shelly_modbus}`");
         let mut shelly_client = Shelly3EMClient::new(shelly_modbus.parse().unwrap()).await;
         let mut home_assistant_client = HomeAssistantAPI::new();
 
+        println!("Running");
+        let should_smooth = parse_bool_safe(env::var("HA_SMOOTH").ok());
+        let mut filtered_ha_offset = RollingAverage::default();
         let mut interval = time::interval(Duration::from_millis(500));
         loop {
             // Now we read the shelly, and also read the HA offset
@@ -43,8 +47,12 @@ impl DataFetcher {
                 &mut home_assistant_client,
             )
             .await;
-            let summed_power =
-                shelly_net_power.expect("Didnt get shelly power") + ha_import - ha_export;
+            let ha_offset = if should_smooth {
+                filtered_ha_offset.add(ha_import - ha_export)
+            } else {
+                ha_import - ha_export
+            };
+            let summed_power = shelly_net_power.expect("Didn't get shelly power") + ha_offset;
             println!(
                 "Summed power {summed_power}W, shelly {:?}W, HA Import {}W Export {}W",
                 shelly_net_power, ha_import, ha_export
@@ -80,5 +88,45 @@ impl DataFetcher {
             .send(Readings::NetACCurrent(summed_power))
             .await
             .expect("Cant send readings to fake meter");
+    }
+}
+
+fn parse_bool_safe(val: Option<String>) -> bool {
+    val.unwrap_or_default()
+        .to_ascii_lowercase()
+        .parse()
+        .unwrap_or_default()
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_bool_safe() {
+        // Test None input
+        assert_eq!(parse_bool_safe(None), false);
+
+        // Test empty string
+        assert_eq!(parse_bool_safe(Some("".to_string())), false);
+
+        // Test "true" variations
+        assert_eq!(parse_bool_safe(Some("true".to_string())), true);
+        assert_eq!(parse_bool_safe(Some("True".to_string())), true);
+        assert_eq!(parse_bool_safe(Some("TRUE".to_string())), true);
+        assert_eq!(parse_bool_safe(Some("TrUe".to_string())), true);
+
+        // Test "false" variations
+        assert_eq!(parse_bool_safe(Some("false".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("False".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("FALSE".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("FaLsE".to_string())), false);
+
+        // Test invalid strings (should default to false)
+        assert_eq!(parse_bool_safe(Some("yes".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("no".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("1".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("0".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("invalid".to_string())), false);
+        assert_eq!(parse_bool_safe(Some("random text".to_string())), false);
     }
 }
