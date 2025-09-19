@@ -4,22 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.97"
-reqwest = { version = "0.12.14", features = [
+anyhow = "1.0"
+reqwest = { version = "0.12", features = [
     "json",
     "gzip",
     "deflate",
 ], default-features = false }
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"
 serde_json = "1.0"
 tokio = { version = "1.44", features = ["time"], default-features = true }
-tokio-modbus = { version = "0.16.1", features = [
+tokio-modbus = { version = "0.16", features = [
     "server",
     "tcp",
     "tcp-server",
 ] }
-tracing-subscriber = "0.3.19"
+tracing-subscriber = "0.3"
 
 [dev-dependencies]
 mockito = "1.7.0"

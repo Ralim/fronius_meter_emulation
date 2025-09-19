@@ -5,6 +5,7 @@ use tokio::net::TcpListener;
 use tokio_modbus::server::tcp::{accept_tcp_connection, Server};
 mod data_fetcher;
 mod home_assistant;
+mod rolling_average;
 mod shelly_3em_client;
 mod smart_meter_emulator;
 
