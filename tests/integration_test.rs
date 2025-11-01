@@ -124,10 +124,6 @@ impl MockHomeAssistantServer {
         *self.export_value.lock().unwrap() = value;
     }
 
-    fn set_should_fail(&self, should_fail: bool) {
-        self.should_fail.store(should_fail, Ordering::Relaxed);
-    }
-
     fn get_request_count(&self) -> u32 {
         self.request_count.load(Ordering::Relaxed)
     }
@@ -264,7 +260,7 @@ async fn test_full_integration() {
 
     // Start the application
     let (emulated_meter, meter_update_handle) = SmartMeterEmulator::new();
-    let _data_coordinator = ThreadedDataCoordinator::new(meter_update_handle);
+    ThreadedDataCoordinator::start(meter_update_handle);
 
     // Start the meter's Modbus TCP server
     let meter_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -434,7 +430,7 @@ async fn test_missing_home_assistant_config() {
     std::env::set_var("SHELLY_MODBUS", shelly_addr.to_string());
 
     let (emulated_meter, meter_update_handle) = SmartMeterEmulator::new();
-    let _data_coordinator = ThreadedDataCoordinator::new(meter_update_handle);
+    ThreadedDataCoordinator::start(meter_update_handle);
 
     let meter_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let meter_addr = meter_listener.local_addr().unwrap();

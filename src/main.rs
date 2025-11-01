@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Shelly power meter reading (Modbus)
     // 2. Home Assistant offset reading (HTTP)
     // 3. Power data combination with minimal locking
-    let _data_coordinator = ThreadedDataCoordinator::new(meter_update_handle);
+    ThreadedDataCoordinator::start(meter_update_handle);
 
     //Start fake meter
     server_context(socket_addr, emulated_meter)

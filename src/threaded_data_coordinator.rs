@@ -9,13 +9,11 @@ use tokio::sync::mpsc::{self, Sender};
 
 /// Coordinates the threaded data fetching architecture
 /// Spawns isolated threads for each data source and manages their communication
-pub struct ThreadedDataCoordinator {
-    power_combiner: Arc<PowerCombiner>,
-}
+pub struct ThreadedDataCoordinator {}
 
 impl ThreadedDataCoordinator {
     /// Creates a new ThreadedDataCoordinator and starts all worker threads
-    pub fn new(meter_update_sender: Sender<Readings>) -> Self {
+    pub fn start(meter_update_sender: Sender<Readings>) {
         println!("Initializing threaded data coordinator");
 
         // Create channels for inter-thread communication
@@ -36,8 +34,6 @@ impl ThreadedDataCoordinator {
         Self::start_home_assistant_reader_thread(ha_tx);
 
         println!("All data reader threads started successfully");
-
-        Self { power_combiner }
     }
 
     /// Starts the Shelly power meter reader thread
@@ -83,7 +79,7 @@ mod tests {
         let (meter_tx, _meter_rx) = mpsc::channel(32);
 
         // This should not panic and should create the coordinator
-        let _coordinator = ThreadedDataCoordinator::new(meter_tx);
+        ThreadedDataCoordinator::start(meter_tx);
 
         // Wait a moment for threads to start
         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -102,7 +98,7 @@ mod tests {
         // Set minimal required env vars to avoid panics
         env::set_var("SHELLY_MODBUS", "127.0.0.1:5502");
 
-        let _coordinator = ThreadedDataCoordinator::new(meter_tx);
+        ThreadedDataCoordinator::start(meter_tx);
 
         // Wait a moment for threads to start
         tokio::time::sleep(Duration::from_millis(50)).await;
