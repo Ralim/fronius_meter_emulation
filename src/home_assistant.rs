@@ -7,6 +7,12 @@ pub struct HomeAssistantAPI {
     client: reqwest::Client,
 }
 
+impl Default for HomeAssistantAPI {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HomeAssistantAPI {
     pub fn new() -> Self {
         Self {

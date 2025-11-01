@@ -1,8 +1,5 @@
-use std::{collections::HashMap, future, pin::Pin, process, sync::Arc};
-use tokio::{
-    sync::mpsc::{self, Receiver, Sender},
-    time::timeout,
-};
+use std::{collections::HashMap, future, pin::Pin, sync::Arc};
+use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_modbus::prelude::*;
 
 #[derive(Clone)]
@@ -142,10 +139,9 @@ impl SmartMeterEmulator {
         mut events: Receiver<Readings>,
         holding_registers: Arc<tokio::sync::Mutex<HashMap<u16, u16>>>,
     ) {
-        println!("Starting readinger updates handler task");
+        println!("Starting register updates handler task");
 
-        let data_update_timeout = tokio::time::Duration::from_secs(30);
-        while let Ok(Some(reading)) = timeout(data_update_timeout, events.recv()).await {
+        while let Some(reading) = events.recv().await {
             // println!("New Reading of {reading:?}");
             match reading {
                 Readings::NetACCurrent(reading) => {
@@ -237,8 +233,7 @@ impl SmartMeterEmulator {
                 }
             }
         }
-        println!("No Raw reading updates in 30s, exiting");
-        process::exit(1);
+        println!("Register updates handler task exiting - channel closed");
     }
     async fn set_holding_reg(
         holding_registers: &Arc<tokio::sync::Mutex<HashMap<u16, u16>>>,

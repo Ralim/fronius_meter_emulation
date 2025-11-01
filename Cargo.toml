@@ -3,6 +3,14 @@ name = "fronius_meter_emulation"
 version = "0.1.1"
 edition = "2021"
 
+[[bin]]
+name = "fronius_meter_emulation"
+path = "src/main.rs"
+
+[lib]
+name = "fronius_meter_emulation"
+path = "src/lib.rs"
+
 [dependencies]
 anyhow = "1.0"
 reqwest = { version = "0.12", features = [
@@ -23,6 +31,11 @@ tracing-subscriber = "0.3"
 
 [dev-dependencies]
 mockito = "1.7.0"
+tokio-test = "0.4"
+axum = "0.7"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors"] }
+hyper = "1.0"
 
 [profile.release]
 lto = true
