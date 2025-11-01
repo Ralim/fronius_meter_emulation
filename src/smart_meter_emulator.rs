@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    future, process,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, future, pin::Pin, process, sync::Arc};
 use tokio::{
     sync::mpsc::{self, Receiver, Sender},
     time::timeout,
@@ -11,7 +7,7 @@ use tokio_modbus::prelude::*;
 
 #[derive(Clone)]
 pub struct SmartMeterEmulator {
-    holding_registers: Arc<Mutex<HashMap<u16, u16>>>,
+    holding_registers: Arc<tokio::sync::Mutex<HashMap<u16, u16>>>,
 }
 // Turns out you only need to implement total power here, but they are all supported for future hacks
 #[allow(dead_code)]
@@ -52,27 +48,30 @@ impl tokio_modbus::server::Service for SmartMeterEmulator {
     type Request = Request<'static>;
     type Response = Response;
     type Exception = tokio_modbus::ExceptionCode;
-    type Future = future::Ready<Result<Self::Response, Self::Exception>>;
+    type Future =
+        Pin<Box<dyn future::Future<Output = Result<Self::Response, Self::Exception>> + Send>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
-        let res = match req {
-            Request::ReadInputRegisters(addr, cnt) => {
-                println!("Register Read for {addr}/{cnt}");
-                register_read(&self.holding_registers.lock().unwrap(), addr, cnt)
-                    .map(Response::ReadInputRegisters)
-            }
-            Request::ReadHoldingRegisters(addr, cnt) => {
-                println!("Holding register Read for {addr}/{cnt}");
-                register_read(&self.holding_registers.lock().unwrap(), addr, cnt)
-                    .map(Response::ReadHoldingRegisters)
-            }
+        let holding_registers = self.holding_registers.clone();
+        Box::pin(async move {
+            match req {
+                Request::ReadInputRegisters(addr, cnt) => {
+                    println!("Register Read for {addr}/{cnt}");
+                    let registers = holding_registers.lock().await;
+                    register_read(&registers, addr, cnt).map(Response::ReadInputRegisters)
+                }
+                Request::ReadHoldingRegisters(addr, cnt) => {
+                    println!("Holding register Read for {addr}/{cnt}");
+                    let registers = holding_registers.lock().await;
+                    register_read(&registers, addr, cnt).map(Response::ReadHoldingRegisters)
+                }
 
-            _ => {
-                println!("SERVER: Exception::IllegalFunction - Unimplemented function code in request: {req:?}");
-                Err(tokio_modbus::ExceptionCode::IllegalFunction)
+                _ => {
+                    println!("SERVER: Exception::IllegalFunction - Unimplemented function code in request: {req:?}");
+                    Err(tokio_modbus::ExceptionCode::IllegalFunction)
+                }
             }
-        };
-        future::ready(res)
+        })
     }
 }
 
@@ -129,7 +128,7 @@ impl SmartMeterEmulator {
 
         // To handle incoming data updates, we use an MPSC channel for comms
         let (tx, rx) = mpsc::channel(128);
-        let holding_registers = Arc::new(Mutex::new(holding_registers));
+        let holding_registers = Arc::new(tokio::sync::Mutex::new(holding_registers));
         let handler_holding_registers = holding_registers.clone();
         tokio::spawn(async move {
             Self::handle_incoming_register_events(rx, handler_holding_registers).await;
@@ -141,7 +140,7 @@ impl SmartMeterEmulator {
 
     async fn handle_incoming_register_events(
         mut events: Receiver<Readings>,
-        holding_registers: Arc<Mutex<HashMap<u16, u16>>>,
+        holding_registers: Arc<tokio::sync::Mutex<HashMap<u16, u16>>>,
     ) {
         println!("Starting readinger updates handler task");
 
@@ -150,107 +149,107 @@ impl SmartMeterEmulator {
             // println!("New Reading of {reading:?}");
             match reading {
                 Readings::NetACCurrent(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40071, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40071, reading).await
                 }
                 Readings::AveragePhaseVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40079, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40079, reading).await
                 }
                 Readings::AverageLLVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40087, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40087, reading).await
                 }
                 Readings::PhaseACurrent(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40073, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40073, reading).await
                 }
                 Readings::PhaseBCurrent(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40075, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40075, reading).await
                 }
                 Readings::PhaseCCurrent(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40077, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40077, reading).await
                 }
                 Readings::PhaseAVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40081, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40081, reading).await
                 }
                 Readings::PhaseBVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40083, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40083, reading).await
                 }
                 Readings::PhaseCVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40085, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40085, reading).await
                 }
                 Readings::PhaseAWatts(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40099, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40099, reading).await
                 }
                 Readings::PhaseBWatts(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40101, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40101, reading).await
                 }
                 Readings::PhaseCWatts(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40103, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40103, reading).await
                 }
                 Readings::PhaseABVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40089, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40089, reading).await
                 }
                 Readings::PhaseBCVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40091, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40091, reading).await
                 }
                 Readings::PhaseCAVoltage(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40093, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40093, reading).await
                 }
                 Readings::Frequency(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40095, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40095, reading).await
                 }
                 Readings::TotalRealPower(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40097, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40097, reading).await
                 }
                 Readings::ApparentPower(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40105, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40105, reading).await
                 }
                 Readings::PhaseAVA(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40107, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40107, reading).await
                 }
                 Readings::PhaseBVA(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40109, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40109, reading).await
                 }
                 Readings::PhaseCVA(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 4011, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 4011, reading).await
                 }
                 Readings::ReactivePower(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40113, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40113, reading).await
                 }
                 Readings::PhaseAVAR(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40115, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40115, reading).await
                 }
                 Readings::PhaseBVAR(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40117, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40117, reading).await
                 }
                 Readings::PhaseCVAR(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40119, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40119, reading).await
                 }
                 Readings::PowerFactorTotal(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40121, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40121, reading).await
                 }
                 Readings::PhaseAPF(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40123, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40123, reading).await
                 }
                 Readings::PhaseBPF(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40125, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40125, reading).await
                 }
                 Readings::PhaseCPF(reading) => {
-                    Self::set_holding_reg_f32(&holding_registers, 40127, reading)
+                    Self::set_holding_reg_f32(&holding_registers, 40127, reading).await
                 }
             }
         }
         println!("No Raw reading updates in 30s, exiting");
         process::exit(1);
     }
-    fn set_holding_reg(
-        holding_registers: &Arc<Mutex<HashMap<u16, u16>>>,
+    async fn set_holding_reg(
+        holding_registers: &Arc<tokio::sync::Mutex<HashMap<u16, u16>>>,
         register: u16,
         value: u16,
     ) {
-        let mut regs = holding_registers.lock().expect("Shall unlock registers");
+        let mut regs = holding_registers.lock().await;
         regs.entry(register).and_modify(|entry| *entry = value);
     }
-    fn set_holding_reg_f32(
-        holding_registers: &Arc<Mutex<HashMap<u16, u16>>>,
+    async fn set_holding_reg_f32(
+        holding_registers: &Arc<tokio::sync::Mutex<HashMap<u16, u16>>>,
         register_base_number: u16,
         value: f32,
     ) {
@@ -259,12 +258,14 @@ impl SmartMeterEmulator {
             holding_registers,
             register_base_number,
             (int_encoding >> 16) as u16,
-        );
+        )
+        .await;
         Self::set_holding_reg(
             holding_registers,
             register_base_number + 1,
             (int_encoding & 0xFFFF) as u16,
-        );
+        )
+        .await;
     }
 }
 
