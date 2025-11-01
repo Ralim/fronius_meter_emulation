@@ -193,7 +193,7 @@ dependencies = [
 
 [[package]]
 name = "fronius_meter_emulation"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "mockito",
