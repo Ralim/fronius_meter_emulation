@@ -24,6 +24,8 @@ This software is best run as a docker container on a device that has a reliable 
 At the moment the only source meter is the Shelly 3EM, more can be added if desired.
 This meter is read via modbus, as this provides the simplest means of capturing the measurements.
 
+The Shelly modbus address and port must be specified via the `SHELLY_MODBUS` env var.
+
 ### Home Assistant
 
 The Home Assistant controls are read over the API from home assitant at approximately 1Hz.
@@ -31,6 +33,7 @@ To aid in control, there are two controls supported; which are added as virtual 
 This means if you have a virtual export of 1000W and a virtual import of 400W, a net shift of 600W of export is added to the raw meter
 reading before its reported to the virtual meter.
 
+The Home Assistant integration can be configured via the `HA_URL`, `HA_TOKEN`, `HA_EXTRA_IMPORT` and `HA_EXTRA_EXPORT` env vars.
 
 ### The Emulated meter
 
