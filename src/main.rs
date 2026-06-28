@@ -1,6 +1,6 @@
 use data_fetcher::DataFetcher;
 use smart_meter_emulator::SmartMeterEmulator;
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr};
 use tokio::net::TcpListener;
 use tokio_modbus::server::tcp::{accept_tcp_connection, Server};
 mod data_fetcher;
@@ -13,8 +13,11 @@ mod smart_meter_emulator;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    println!("Starting Fronius modbus bridge");
-    let socket_addr = "0.0.0.0:5502".parse().unwrap();
+    let socket_addr = env::var("FRONIUS_MODBUS_BIND")
+        .unwrap_or("0.0.0.0:5502".to_string())
+        .parse()
+        .unwrap();
+    println!("Starting Fronius modbus bridge on {socket_addr}");
 
     let (emulated_meter, meter_update_handle) = SmartMeterEmulator::new();
     let _data_fetcher = DataFetcher::new(meter_update_handle);

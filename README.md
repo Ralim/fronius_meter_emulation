@@ -38,6 +38,7 @@ The emulated meter does not implement writing.
 The software has code to handle most of the readings published by the Fronius smart meter; but in testing its been found the inverter only looks at the net wattage values anyway.
 So the code doesnt bother with the rest and instead just implements those to keep latency down
 
+By default the modbus socket is bound on `0.0.0.0:5502`, but this can be overridden using the `FRONIUS_MODBUS_BIND` env var.
 
 ## Kudos
 
