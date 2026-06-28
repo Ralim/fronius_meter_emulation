@@ -16,6 +16,10 @@ impl HomeAssistantAPI {
         }
     }
 
+    pub fn is_configured(&self) -> bool {
+        !self.endpoint_url.is_empty() && !self.auth_token.is_empty()
+    }
+
     pub async fn read_sensor_value(
         &mut self,
         sensor_path: &str,

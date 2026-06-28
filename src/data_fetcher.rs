@@ -30,6 +30,10 @@ impl DataFetcher {
         let mut shelly_client = Shelly3EMClient::new(shelly_modbus.parse().unwrap()).await;
         let mut home_assistant_client = HomeAssistantAPI::new();
 
+        if !home_assistant_client.is_configured() {
+            println!("Home assistant integration disabled")
+        }
+
         println!("Running");
         let should_smooth = parse_bool_safe(env::var("HA_SMOOTH").ok());
         let mut filtered_ha_offset = RollingAverage::default();
@@ -37,20 +41,25 @@ impl DataFetcher {
         loop {
             // Now we read the shelly, and also read the HA offset
             let shelly_net_power = shelly_client.read_total_power().await;
-            let ha_import = Self::read_ha_sensor_or_null(
-                &home_assistant_extra_import_sensor,
-                &mut home_assistant_client,
-            )
-            .await;
-            let ha_export = Self::read_ha_sensor_or_null(
-                &home_assistant_extra_export_sensor,
-                &mut home_assistant_client,
-            )
-            .await;
-            let ha_offset = if should_smooth {
-                filtered_ha_offset.add(ha_import - ha_export)
+            let (ha_import, ha_export, ha_offset) = if home_assistant_client.is_configured() {
+                let ha_import = Self::read_ha_sensor_or_null(
+                    &home_assistant_extra_import_sensor,
+                    &mut home_assistant_client,
+                )
+                .await;
+                let ha_export = Self::read_ha_sensor_or_null(
+                    &home_assistant_extra_export_sensor,
+                    &mut home_assistant_client,
+                )
+                .await;
+                let ha_offset = if should_smooth {
+                    filtered_ha_offset.add(ha_import - ha_export)
+                } else {
+                    ha_import - ha_export
+                };
+                (ha_import, ha_export, ha_offset)
             } else {
-                ha_import - ha_export
+                (0.0, 0.0, 0.0)
             };
             let summed_power = shelly_net_power.expect("Didn't get shelly power") + ha_offset;
             println!(
