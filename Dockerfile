@@ -16,6 +16,6 @@ FROM alpine:latest
 WORKDIR /usr/local/bin
 COPY --from=builder /usr/local/cargo/bin/fronius_meter_emulation .
 USER 1000
-EXPOSE 5502
-HEALTHCHECK CMD netstat -an | grep 5502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
+EXPOSE 1502
+HEALTHCHECK CMD netstat -an | grep 1502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
 CMD ["/usr/local/bin/fronius_meter_emulation"]

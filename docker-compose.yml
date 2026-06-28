@@ -4,7 +4,7 @@ services:
     build:
       context: .
     ports:
-      - "5502:5502"
+      - "1502:1502"
     environment:
       - HA_URL=http://192.168.0.2:8123
       - HA_TOKEN=your_long_lived_access_token
@@ -13,7 +13,7 @@ services:
       - HA_EXTRA_EXPORT=sensor.fronius_solar_extra_export
 
     healthcheck:
-      test: netstat -an | grep 5502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
+      test: netstat -an | grep 1502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;
       interval: 10s
       timeout: 10s
       retries: 3
