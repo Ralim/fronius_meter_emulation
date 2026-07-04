@@ -162,6 +162,19 @@ impl DataFetcher {
                         .await
                         .expect("Cant send readings to fake meter");
                 }
+                if let Some((import_total, export_total)) =
+                    shelly_client.read_import_export_totals().await
+                {
+                    output
+                        .send(Readings::TotalWhImport(import_total))
+                        .await
+                        .expect("Cant send readings to fake meter");
+                    output
+                        .send(Readings::TotalWhExport(export_total))
+                        .await
+                        .expect("Cant send readings to fake meter");
+                }
+
                 last_slow_meter_read = time::Instant::now();
             }
             interval.tick().await; // Wait for next sample time

@@ -42,6 +42,8 @@ pub enum Readings {
     PhaseAPF(f32),
     PhaseBPF(f32),
     PhaseCPF(f32),
+    TotalWhExport(f32),
+    TotalWhImport(f32),
 }
 
 impl tokio_modbus::server::Service for SmartMeterEmulator {
@@ -237,6 +239,12 @@ impl SmartMeterEmulator {
                 Readings::PhaseCPF(reading) => {
                     Self::set_holding_reg_f32(&holding_registers, 40127, reading).await
                 }
+                Readings::TotalWhExport(reading) => {
+                    Self::set_holding_reg_f32(&holding_registers, 40129, reading).await
+                }
+                Readings::TotalWhImport(reading) => {
+                    Self::set_holding_reg_f32(&holding_registers, 40137, reading).await
+                }
             }
         }
         println!("No Raw reading updates in 30s, exiting");
@@ -289,6 +297,5 @@ fn register_read(
             return Err(tokio_modbus::ExceptionCode::IllegalDataAddress);
         }
     }
-    // println!("Register read for addr:{addr} count:{cnt} returns {response_values:?}");
     Ok(response_values)
 }

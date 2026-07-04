@@ -2,7 +2,7 @@ use data_fetcher::DataFetcher;
 use smart_meter_emulator::SmartMeterEmulator;
 use std::{env, net::SocketAddr};
 use tokio::net::TcpListener;
-use tokio_modbus::server::tcp::{accept_tcp_connection, Server};
+use tokio_modbus::server::tcp::{Server, accept_tcp_connection};
 mod data_fetcher;
 mod home_assistant;
 mod rolling_average;
