@@ -11,6 +11,7 @@ services:
       - SHELLY_MODBUS=192.168.0.3:502
       - HA_EXTRA_IMPORT=sensor.fronius_solar_extra_import
       - HA_EXTRA_EXPORT=sensor.fronius_solar_extra_export
+      - FRONIUS_MODBUS_BIND=0.0.0.0:1502
 
     healthcheck:
       test: netstat -an | grep 1502 > /dev/null; if [ 0 != $? ]; then exit 1; fi;

@@ -27,6 +27,11 @@ This meter is read via modbus, as this provides the simplest means of capturing 
 
 The Shelly modbus address and port must be specified via the `SHELLY_MODBUS` env var.
 
+The code priorities updating the live power reading at 2Hz. Shelly Devices only update at 1Hz but this is done to reduce latency.
+Other sensors (per phase readings, Wh totals) are updated much slower as the Inverter doesnt (yet?) appear to use them, and the Shelly doesnt like getting hammered for modbus messages.
+The code defaults to updating these every 60 seconds. You can increase the speed by setting the `SLOW_METER_READ_INTERVAL_S` env var to a lower value. (Such as 5 for 5seconds).
+
+
 ### Home Assistant
 
 The Home Assistant controls are read over the API from home assitant at approximately 1Hz.
@@ -45,6 +50,21 @@ So the code doesnt bother with the rest and instead just implements those to kee
 By default the modbus socket is bound on `0.0.0.0:1502`, but this can be overridden using the `FRONIUS_MODBUS_BIND` env var.
 Port 1502 is used as its available in most Fronius firmware's, but you can override it to use a different port if needed.
 
+
+## Configuration
+
+The code is entirely configured by environment variables, to make running in docker easier without having to map volume mounts etc.
+
+```bash
+HA_EXTRA_IMPORT # Home Assistant sensor that is added to import readings
+HA_EXTRA_EXPORT # Home Assistant sensor that is added to export readings
+SHELLY_MODBUS # Modbus address of the Shelly 3EM meter
+SLOW_METER_READ_INTERVAL_S # Interval in seconds between slow meter reads
+HA_SMOOTH # Home Assistant smoothing enable disable (true/false)
+HA_URL # Home Assistant URL to connect to
+HA_TOKEN # Home Assistant token for authentication
+FRONIUS_MODBUS_BIND # IP:port to bind the modbus socket to for emulating the Fronius meter
+```
 ## Kudos
 
 https://www.photovoltaikforum.com/thread/224214-gen24-smart-meter-modbus-tcp-emulation-mit-esp32/
