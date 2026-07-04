@@ -3,8 +3,9 @@
 TL;DR I'm not installing multiple vendors smart meters because of vendor locking.
 
 This software is setup to read from a Shelly 3EM over TCP Modbus, and then provide those readings to a Fronius solar inverter.
-This setup will **NEVER** be perfect. You will **not** be able to ever use this for 0 export control.
+This setup will **NEVER** be perfect. You will **not** be able to ever use this for 0 export control. (There will always be some small errors as Shelly meters cant read faster than 1Hz).
 This is used as "near enough" control for situations where you _can_ export to the grid, but pricing may be non optimal.
+Or for situations where you just want to have the readings available to the inverter for its app / charts etc.
 Such as in Australia when on wholesale pricing and during the middle of the day when export prices go negative.
 All this code does is transfer the power readings over between the Shelly Modbus and the Fronius Modbus TCP interface.
 
@@ -42,6 +43,7 @@ The software has code to handle most of the readings published by the Fronius sm
 So the code doesnt bother with the rest and instead just implements those to keep latency down
 
 By default the modbus socket is bound on `0.0.0.0:1502`, but this can be overridden using the `FRONIUS_MODBUS_BIND` env var.
+Port 1502 is used as its available in most Fronius firmware's, but you can override it to use a different port if needed.
 
 ## Kudos
 
