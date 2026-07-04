@@ -67,7 +67,9 @@ impl tokio_modbus::server::Service for SmartMeterEmulator {
                 }
 
                 _ => {
-                    println!("SERVER: Exception::IllegalFunction - Unimplemented function code in request: {req:?}");
+                    println!(
+                        "SERVER: Exception::IllegalFunction - Unimplemented function code in request: {req:?}"
+                    );
                     Err(tokio_modbus::ExceptionCode::IllegalFunction)
                 }
             }

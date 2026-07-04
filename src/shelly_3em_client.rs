@@ -88,7 +88,7 @@ fn merge_u16_f32(a: u16, b: u16) -> f32 {
     let x: u32 = a as u32 | (b as u32) << 16;
     f32::from_bits(x)
 }
-
+#[allow(dead_code)] // We list all for reference when doing multi-reg reads
 pub struct PhaseMeasurements {
     pub voltage: f32,
     pub current: f32,
