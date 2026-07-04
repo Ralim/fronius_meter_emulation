@@ -82,8 +82,10 @@ mod test_ha_wrapper {
             .create();
 
         // Set environment variables for the test
-        env::set_var("HA_URL", server.url());
-        env::set_var("HA_TOKEN", "test_token");
+        unsafe {
+            env::set_var("HA_URL", server.url());
+            env::set_var("HA_TOKEN", "test_token");
+        }
 
         // Create API instance and perform request
 
@@ -104,7 +106,9 @@ mod test_ha_wrapper {
     #[tokio::test]
     async fn test_home_assistant_api_no_connection() {
         // Clear environment variables
-        env::remove_var("HA_URL");
+        unsafe {
+            env::remove_var("HA_URL");
+        }
 
         let mut api = HomeAssistantAPI::new();
         let result = api.read_sensor_value("sensor.temperature").await;

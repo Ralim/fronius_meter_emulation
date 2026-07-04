@@ -1,11 +1,11 @@
 [package]
 name = "fronius_meter_emulation"
-version = "0.1.1"
-edition = "2021"
+version = "0.2.0"
+edition = "2024"
 
 [dependencies]
 anyhow = "1.0"
-reqwest = { version = "0.12", features = [
+reqwest = { version = "0.13", features = [
     "json",
     "gzip",
     "deflate",
