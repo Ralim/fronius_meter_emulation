@@ -8,6 +8,7 @@ pub struct Shelly3EMClient {
 }
 // Registers are documented here
 // https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/EM/#modbus-registers
+// https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/EMData/#modbus-registers
 
 impl Shelly3EMClient {
     pub async fn new(target_device: SocketAddr) -> Self {
@@ -18,10 +19,38 @@ impl Shelly3EMClient {
         Self { connection }
     }
     pub async fn read_total_power(&mut self) -> Option<f32> {
-        if let Ok(total_readings) = self.connection.read_input_registers(1013, 2).await.unwrap() {
+        if let Ok(total_readings) = self
+            .connection
+            .read_input_registers(ShellyRegister::TotalPower as u16, 2)
+            .await
+            .unwrap()
+        {
             // Convert the bytes of the totals into floats and send onwards
             let total_active_power = merge_u16_f32(total_readings[0], total_readings[1]);
             Some(total_active_power)
+        } else {
+            None
+        }
+    }
+    pub async fn read_import_export_totals(&mut self) -> Option<(f32, f32)> {
+        if let Ok(import_readings) = self
+            .connection
+            .read_input_registers(ShellyRegister::TotalWhImport as u16, 2)
+            .await
+            .unwrap()
+        {
+            let import_total = merge_u16_f32(import_readings[0], import_readings[1]);
+            if let Ok(export_readings) = self
+                .connection
+                .read_input_registers(ShellyRegister::TotalWhExport as u16, 2)
+                .await
+                .unwrap()
+            {
+                let export_total = merge_u16_f32(export_readings[0], export_readings[1]);
+                Some((import_total, export_total))
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -98,7 +127,9 @@ pub struct PhaseMeasurements {
     pub frequency: f32,
 }
 #[repr(u16)]
+#[allow(dead_code)] // We list all for reference when doing multi-reg reads
 enum ShellyRegister {
+    TotalPower = 1013,
     // Phase A Readings
     PhaseAVoltage = 31020,
     PhaseACurrent = 31022,
@@ -124,4 +155,7 @@ enum ShellyRegister {
     TotalCurrent = 31011,
     TotalActivePower = 31013,
     TotalApparentPower = 31015,
+    // Note: These total across phases without summing phases first, so if you import on one phase and export on another both will increment
+    TotalWhImport = 31162,
+    TotalWhExport = 31164,
 }
